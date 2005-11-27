@@ -8,15 +8,15 @@
  link on you sidebar / posts / wherever
  
  Feel free to visit my website under www.arnebrachhold.de or contact me at
- himself@arnebrachhold.de
+ himself [at] arnebrachhold [dot] de
  
  
  Info for WordPress:
  ==============================================================================
  Plugin Name: del.icio.us - Bookmark this!
  Plugin URI: http://www.arnebrachhold.de/2005/06/05/delicious-bookmark-this-wordpress-plugin
- Description: This plugin will allow you to add an "Bookmark this page on del.icio.us" link on you sidebar / posts / wherever. Don't forget to add the &lt;?php dbt_getLinkTag("Bookmark on del.icio.us"); ?&gt; code in your templates.
- Version: 1.0
+ Description: This plugin will allow you to add an "Bookmark this page on del.icio.us" link on you sidebar / posts / wherever. Don't forget to add the &lt;?php dbt_getLinkTag("Bookmark on del.icio.us"); ?&gt; code in your templates OR use &lt;?php dbt_the_LinkTag("Bookmark on del.icio.us"); ?&gt; inside &quot;The Loop&quot;.
+ Version: 1.1
  Author: Arne Brachhold
  Author URI: http://www.arnebrachhold.de
  
@@ -29,6 +29,7 @@
  Release History:
  ==============================================================================
  2005-06-15		1.0		First release
+ 2005-11-27		1.1		Added dbt_the_LinkTag which works inside "The Loop"
  
  
  Maybe Todo:
@@ -61,7 +62,7 @@
 
 //Default configuration values
 $dbt_options=array();
-$dbt_options["useHead"]=false;				//Insert JavaScript function in head. Set false to place it inline
+$dbt_options["useHead"]=true;				//Insert JavaScript function in head. Set false to place it inline
 
 //Global Storage for runtime variables
 $dbt_globals["functionDone"]=false;			//Was our dbt_bookmark() written on the page?
@@ -75,12 +76,13 @@ if(!function_exists("dbt_addJavaScript")) {
 		global $dbt_globals;
 		if($dbt_globals["functionDone"]===false) {
 			echo "
-			<!-- Added by \"del.icio.us - Bookmark this!\", a WordPress Plugin of Arne Brachhold, v1.0 -->
+			<!-- Added by \"del.icio.us - Bookmark this!\", a WordPress Plugin of Arne Brachhold, v1.1 -->
 			<script type=\"text/javascript\" language=\"JavaScript\">
 				//Bookmark on del.icio.us
-				function dbt_bookmark() {
+				function dbt_bookmark(targetURL) {
 					//URL of this document
 					var loc=location.href;
+					if(targetURL && targetURL.length>0) loc = targetURL;
 					//Strip out any anchors
 					var apos=loc.indexOf('#');
 					loc=(apos>0?loc.substring(0,apos):loc);
@@ -99,7 +101,7 @@ if(!function_exists("dbt_addJavaScript")) {
 	}	
 }
 
-if(!function_exists("dbt_getLink")) {
+if(!function_exists("dbt_getLinkTag")) {
 	/**
 	 * Echos a link tag to bookmark the page
 	 *
@@ -113,6 +115,25 @@ if(!function_exists("dbt_getLink")) {
 		dbt_addJavaScript();
 		echo "<a href=\"#\" onclick=\"return dbt_bookmark();\" $attr>$text</a>";
 	}	
+}
+
+if(!function_exists("dbt_the_LinkTag")) {
+	/**
+	 * Echos a link tag to bookmark the current post. Works only inside the loop
+	 *
+	 * @param string $text The text of the link and/or HTML
+	 * @param string $attr Additional attributes for the tag.
+	 *
+	 * @example dbt_the_LinkTag("<img src='bm.gif' border='0' />"); //Will create a link with an image
+	 * @example dbt_the_LinkTag("Bookmark this",'style="color:blue;"'); //Will create a textlink in blue color
+	 */
+	function dbt_the_LinkTag($text="Bookmark on del.icio.us",$attr="") {
+		global $post;
+		if($post && is_object($post) && $post->ID>0) {
+			dbt_addJavaScript();
+			echo "<a href=\"#\" onclick=\"return dbt_bookmark('" . get_permalink($post->ID) . "');\" $attr>$text</a>";
+		}
+	}
 }
 
 //If enabled, write the JavaScript function into the head method.
