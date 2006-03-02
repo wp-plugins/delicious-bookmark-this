@@ -4,8 +4,8 @@
  del.icio.us - Bookmark this!
  ==============================================================================
  
- This plugin will allow you to add an "Bookmark this page on del.icio.us"
- link on you sidebar / posts / wherever
+ This plugin will allow you to add an "Bookmark this page on 
+ del.icio.us/digg/furl/newsvine/blinklist" link on you sidebar / posts / wherever
  
  Feel free to visit my website under www.arnebrachhold.de or contact me at
  himself [at] arnebrachhold [dot] de
@@ -15,8 +15,8 @@
  ==============================================================================
  Plugin Name: del.icio.us - Bookmark this!
  Plugin URI: http://www.arnebrachhold.de/2005/06/05/delicious-bookmark-this-wordpress-plugin
- Description: This plugin will allow you to add an "Bookmark this page on del.icio.us" link on you sidebar / posts / wherever. Don't forget to add the &lt;?php dbt_getLinkTag("Bookmark on del.icio.us"); ?&gt; code in your templates OR use &lt;?php dbt_the_LinkTag("Bookmark on del.icio.us"); ?&gt; inside &quot;The Loop&quot;.
- Version: 1.1
+ Description: This plugin will allow you to add an "Bookmark this page on del.icio.us/digg/furl/newsvine/blinklist" link on you sidebar / posts / wherever. Don't forget to add the &lt;?php dbt_getLinkTag(&quot;Bookmark on del.icio.us&quot;); ?&gt; code in your templates OR use &lt;?php dbt_the_LinkTag(&quot;Bookmark on del.icio.us&quot;); ?&gt; inside &quot;The Loop&quot;. Look at the included readme.txt for more information.
+ Version: 1.2
  Author: Arne Brachhold
  Author URI: http://www.arnebrachhold.de
  
@@ -30,6 +30,7 @@
  ==============================================================================
  2005-06-15		1.0		First release
  2005-11-27		1.1		Added dbt_the_LinkTag which works inside "The Loop"
+ 2006-03-02		1.2		Added support for furl, digg, blinklist, newsvine  !SYNTAX CHANGED!
  
  
  Maybe Todo:
@@ -76,24 +77,34 @@ if(!function_exists("dbt_addJavaScript")) {
 		global $dbt_globals;
 		if($dbt_globals["functionDone"]===false) {
 			echo "
-			<!-- Added by \"del.icio.us - Bookmark this!\", a WordPress Plugin of Arne Brachhold, v1.1 -->
+			<!-- Added by \"del.icio.us - Bookmark this!\", a WordPress Plugin of Arne Brachhold, v1.2 -->
 			<script type=\"text/javascript\" language=\"JavaScript\">
+				//<![CDATA[
 				//Bookmark on del.icio.us
-				function dbt_bookmark(targetURL) {
+				function dbt_bookmark(targetURL,service) {
 					//URL of this document
-					var loc=location.href;
-					if(targetURL && targetURL.length>0) loc = targetURL;
+					if(!service) service='delicious';
+					var loc=(targetURL && targetURL.length>0?targetURL:location.href);
 					//Strip out any anchors
 					var apos=loc.indexOf('#');
-					loc=(apos>0?loc.substring(0,apos):loc);
-					//Redirect to del.icio.us
-					location.href='http://del.icio.us/post?v=2&amp;url='
-					+ encodeURIComponent(loc)
-					+'&amp;title='
-					+encodeURIComponent(document.title);
-					//Return false so the link won't be activated. 
+					loc=encodeURIComponent((apos>0?loc.substring(0,apos):loc));
+					
+					//Get Title and encode
+					var title = encodeURIComponent(document.title); 
+					
+					var url='';
+					
+					//Redirect to service
+					if(service=='digg') url='http://www.digg.com/submit?phase=2&url=' + loc + '&title=' + title;
+					else if(service=='newsvine') url='http://www.newsvine.com/_tools/seed&save?u=' + loc + '&h=' + title;
+					else if(service=='furl') url='http://www.furl.net/storeIt.jsp?p=1&u='+ loc +'&t=' + title;
+					else if(service=='blinklist') url='http://www.blinklist.com/index.php?Action=Blink/addblink.php&Description=&Url=' + loc + '&Title=' + title;
+					else url='http://del.icio.us/post?v=2&url=' + loc + '&amp;title=' + title;
+					
+					location.href = url;
 					return false;
 				}
+				//]]>
 			</script>
 			";	
 			$dbt_globals["functionDone"]=true;
@@ -106,14 +117,15 @@ if(!function_exists("dbt_getLinkTag")) {
 	 * Echos a link tag to bookmark the page
 	 *
 	 * @param string $text The text of the link and/or HTML
+	 * @param string $service Which bookmark service do you want to use. (digg,newsvine,furl,blinklist,delicious)
 	 * @param string $attr Additional attributes for the tag.
 	 *
 	 * @example dbt_getLinkTag("<img src='bm.gif' border='0' />"); //Will create a link with an image
 	 * @example dbt_getLinkTag("Bookmark this",'style="color:blue;"'); //Will create a textlink in blue color
 	 */
-	function dbt_getLinkTag($text="Bookmark on del.icio.us",$attr="") {
+	function dbt_getLinkTag($text="Bookmark on del.icio.us",$service="delicious",$attr="") {
 		dbt_addJavaScript();
-		echo "<a href=\"#\" onclick=\"return dbt_bookmark();\" $attr>$text</a>";
+		echo "<a href=\"#\" onclick=\"return dbt_bookmark(null,'$service');\" $attr>$text</a>";
 	}	
 }
 
@@ -122,16 +134,17 @@ if(!function_exists("dbt_the_LinkTag")) {
 	 * Echos a link tag to bookmark the current post. Works only inside the loop
 	 *
 	 * @param string $text The text of the link and/or HTML
+	 * @param string $service Which bookmark service do you want to use. (digg,newsvine,furl,blinklist,delicious)
 	 * @param string $attr Additional attributes for the tag.
 	 *
 	 * @example dbt_the_LinkTag("<img src='bm.gif' border='0' />"); //Will create a link with an image
 	 * @example dbt_the_LinkTag("Bookmark this",'style="color:blue;"'); //Will create a textlink in blue color
 	 */
-	function dbt_the_LinkTag($text="Bookmark on del.icio.us",$attr="") {
+	function dbt_the_LinkTag($text="Bookmark on del.icio.us",$service="delicious",$attr="") {
 		global $post;
 		if($post && is_object($post) && $post->ID>0) {
 			dbt_addJavaScript();
-			echo "<a href=\"#\" onclick=\"return dbt_bookmark('" . get_permalink($post->ID) . "');\" $attr>$text</a>";
+			echo "<a href=\"#\" onclick=\"return dbt_bookmark('" . get_permalink($post->ID) . "','$service');\" $attr>$text</a>";
 		}
 	}
 }
