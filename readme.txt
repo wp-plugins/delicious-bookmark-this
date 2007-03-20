@@ -48,9 +48,11 @@ Yes youn can! Just repeat the function several times. Example <?php dbt_the_Link
 = Which bookmark services are supported? =
 
 There is currently support for:
+
 * "delicious" (http://del.icio.us)
 * "digg" (http://www.digg.com)
 * "furl" (http://www.furl.net)
 * "newsvine" (http://www.newsvine.com) 
 * "blinklist" (http://www.blinklist.com)
+
 Use the quoted string as the second parameter for the functions explained above.
